@@ -11,20 +11,21 @@ def pipeline(*args: Any, ops: List[Callable]):
         _out = op(_out)
     return _out
 
+
 class SessionWrapper(object):
     sess: Optional[Any] = None
     mode: Optional[Model] = None
-    
+
     def __init__(self, model: Model):
         self.model = model
-    
+
     def open_session(self):
         self.sess = session.create(self.model.model)
-        
+
     def close_session(self):
-        if not(self.sess is None):
+        if not (self.sess is None):
             self.sess.close()
-            
+
     def inference(self, *args: Any) -> Any:
         return pipeline(*args, ops=[self.model.preprocess, self.sess.run, self.model.postprocess])
 
@@ -34,6 +35,6 @@ class SessionWrapper(object):
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.close_session()
-            
+
     def __del__(self):
-        self.close_session()    
+        self.close_session()
