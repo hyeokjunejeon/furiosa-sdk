@@ -1,4 +1,3 @@
-from functools import partial
 from typing import Any, Callable, List, Optional
 
 from furiosa.registry import Model
@@ -14,7 +13,7 @@ def pipeline(*args: Any, ops: List[Callable]):
 
 class SessionWrapper(object):
     sess: Optional[Any] = None
-    mode: Optional[Model] = None
+    model: Optional[Model] = None
 
     def __init__(self, model: Model):
         self.model = model
