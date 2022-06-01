@@ -3,13 +3,19 @@ from typing import Any, Callable, List, Optional
 from furiosa.registry import Model
 from furiosa.runtime import session
 
+class LazyPipeLine:
+    def __init__(self, value: object):
+        if isinstance(value, Callable):
+            self.compute = value
+        else:
+            def return_val():
+                return value
+            self.compute = return_val
 
-def pipeline(*args: Any, ops: List[Callable]):
-    _out = ops[0](*args)
-    for op in ops[1:]:
-        _out = op(_out)
-    return _out
-
+    def bind(self, f: Callable, *args, **kwargs) -> 'LazyPipeLine':
+        def f_compute():
+            return f(self.compute(), *args, **kwargs)
+        return LazyPipeLine(f_compute)
 
 class SessionWrapper(object):
     sess: Optional[Any] = None
@@ -26,7 +32,11 @@ class SessionWrapper(object):
             self.sess.close()
 
     def inference(self, *args: Any) -> Any:
-        return pipeline(*args, ops=[self.model.preprocess, self.sess.run, self.model.postprocess])
+        return (LazyPipeLine(*args)
+            .bind(self.model.preprocess)
+            .bind(self.sess.run)
+            .bind(self.model.postprocess)
+            .compute())
 
     def __enter__(self):
         self.open_session()
